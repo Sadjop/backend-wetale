@@ -4,7 +4,7 @@ Here is a Makefile template. It provides some shortcuts for the most common task
 To use it, create a new `Makefile` file at the root of your project. Copy/paste
 the content in the template section. To view all the available commands, run `make`.
 
-For example, in the [getting started section](/README.md#getting-started), the
+For example, in the getting started section the
 `docker compose` commands could be replaced by:
 
 1. Run `make build` to build fresh images
