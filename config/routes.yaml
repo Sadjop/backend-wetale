@@ -3,3 +3,19 @@ controllers:
         path: ../src/Controller/
         namespace: App\Controller
     type: attribute
+
+login:
+    path: /login
+    controller: App\Controller\SecurityController::login
+    
+logout:
+    path: /logout
+    controller: App\Controller\SecurityController::logout
+   
+admin:
+    path: /admin
+    controller: App\Controller\Admin\DashboardController::index
+
+
+
+
