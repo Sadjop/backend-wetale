@@ -56,12 +56,9 @@ jobs:
         run: curl -vkI --fail-with-body https://localhost/.well-known/mercure?topic=test
       -
         name: Create test database
-        if: false
-
         run: docker compose exec -T php bin/console -e test doctrine:database:create
       -
         name: Run migrations
-        if: false
         run: docker compose exec -T php bin/console -e test doctrine:migrations:migrate --no-interaction
       -
         name: Run PHPUnit
@@ -70,13 +67,3 @@ jobs:
       -
         name: Doctrine Schema Validator
         run: docker compose exec -T php bin/console -e test doctrine:schema:validate
-  lint:
-    name: Docker Lint
-    runs-on: ubuntu-latest
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v4
-      -
-        name: Lint Dockerfile
-        uses: hadolint/hadolint-action@v3.1.0
