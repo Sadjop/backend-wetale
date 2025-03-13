@@ -2,37 +2,31 @@
 
 namespace App\Entity;
 
-use App\Repository\StoryRepository;
+use App\Repository\ChapterRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: StoryRepository::class)]
-class Story
+#[ORM\Entity(repositoryClass: ChapterRepository::class)]
+class Chapter
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $title = null;
+    #[ORM\ManyToOne(inversedBy: 'chapters')]
+    private ?Story $story = null;
 
     #[ORM\Column(type: Types::TEXT)]
-    private ?string $blurb = null;
-
-    #[ORM\Column(length: 50)]
-    private ?string $status = null;
-
-    #[ORM\Column(length: 50)]
-    private ?string $type = null;
+    private ?string $content = null;
 
     #[ORM\Column]
-    private ?int $lastGeneratedChapter = null;
+    private ?int $number = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?float $completionRatio = null;
+    #[ORM\Column]
+    private ?bool $isCurrent = null;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -41,26 +35,26 @@ class Story
     private ?\DateTimeImmutable $updatedAt = null;
 
     /**
-     * @var Collection<int, Chapter>
+     * @var Collection<int, Vote>
      */
-    #[ORM\OneToMany(targetEntity: Chapter::class, mappedBy: 'story')]
-    private Collection $chapters;
+    #[ORM\OneToMany(targetEntity: Vote::class, mappedBy: 'chapter')]
+    private Collection $votes;
 
     /**
      * @var Collection<int, Library>
      */
-    #[ORM\OneToMany(targetEntity: Library::class, mappedBy: 'story')]
+    #[ORM\OneToMany(targetEntity: Library::class, mappedBy: 'chapter')]
     private Collection $libraries;
 
     /**
      * @var Collection<int, Favorite>
      */
-    #[ORM\OneToMany(targetEntity: Favorite::class, mappedBy: 'story')]
+    #[ORM\OneToMany(targetEntity: Favorite::class, mappedBy: 'chapter')]
     private Collection $favorites;
 
     public function __construct()
     {
-        $this->chapters = new ArrayCollection();
+        $this->votes = new ArrayCollection();
         $this->libraries = new ArrayCollection();
         $this->favorites = new ArrayCollection();
     }
@@ -70,74 +64,50 @@ class Story
         return $this->id;
     }
 
-    public function getTitle(): ?string
+    public function getStory(): ?Story
     {
-        return $this->title;
+        return $this->story;
     }
 
-    public function setTitle(string $title): static
+    public function setStory(?Story $story): static
     {
-        $this->title = $title;
+        $this->story = $story;
 
         return $this;
     }
 
-    public function getBlurb(): ?string
+    public function getContent(): ?string
     {
-        return $this->blurb;
+        return $this->content;
     }
 
-    public function setBlurb(string $blurb): static
+    public function setContent(string $content): static
     {
-        $this->blurb = $blurb;
+        $this->content = $content;
 
         return $this;
     }
 
-    public function getStatus(): ?string
+    public function getNumber(): ?int
     {
-        return $this->status;
+        return $this->number;
     }
 
-    public function setStatus(string $status): static
+    public function setNumber(int $number): static
     {
-        $this->status = $status;
+        $this->number = $number;
 
         return $this;
     }
 
-    public function getType(): ?string
+    public function isCurrent(): ?bool
     {
-        return $this->type;
+        return $this->isCurrent;
     }
 
-    public function setType(string $type): static
+    public function setIsCurrent(bool $isCurrent): static
     {
-        $this->type = $type;
-
-        return $this;
-    }
-
-    public function getLastGeneratedChapter(): ?int
-    {
-        return $this->lastGeneratedChapter;
-    }
-
-    public function setLastGeneratedChapter(int $lastGeneratedChapter): static
-    {
-        $this->lastGeneratedChapter = $lastGeneratedChapter;
-
-        return $this;
-    }
-
-    public function getCompletionRatio(): ?float
-    {
-        return $this->completionRatio;
-    }
-
-    public function setCompletionRatio(?float $completionRatio): static
-    {
-        $this->completionRatio = $completionRatio;
+        $this->isCurrent = $isCurrent;
 
         return $this;
     }
@@ -167,29 +137,29 @@ class Story
     }
 
     /**
-     * @return Collection<int, Chapter>
+     * @return Collection<int, Vote>
      */
-    public function getChapters(): Collection
+    public function getVotes(): Collection
     {
-        return $this->chapters;
+        return $this->votes;
     }
 
-    public function addChapter(Chapter $chapter): static
+    public function addVote(Vote $vote): static
     {
-        if (!$this->chapters->contains($chapter)) {
-            $this->chapters->add($chapter);
-            $chapter->setStory($this);
+        if (!$this->votes->contains($vote)) {
+            $this->votes->add($vote);
+            $vote->setChapter($this);
         }
 
         return $this;
     }
 
-    public function removeChapter(Chapter $chapter): static
+    public function removeVote(Vote $vote): static
     {
-        if ($this->chapters->removeElement($chapter)) {
+        if ($this->votes->removeElement($vote)) {
             // set the owning side to null (unless already changed)
-            if ($chapter->getStory() === $this) {
-                $chapter->setStory(null);
+            if ($vote->getChapter() === $this) {
+                $vote->setChapter(null);
             }
         }
 
@@ -208,7 +178,7 @@ class Story
     {
         if (!$this->libraries->contains($library)) {
             $this->libraries->add($library);
-            $library->setStory($this);
+            $library->setChapter($this);
         }
 
         return $this;
@@ -218,8 +188,8 @@ class Story
     {
         if ($this->libraries->removeElement($library)) {
             // set the owning side to null (unless already changed)
-            if ($library->getStory() === $this) {
-                $library->setStory(null);
+            if ($library->getChapter() === $this) {
+                $library->setChapter(null);
             }
         }
 
@@ -238,7 +208,7 @@ class Story
     {
         if (!$this->favorites->contains($favorite)) {
             $this->favorites->add($favorite);
-            $favorite->setStory($this);
+            $favorite->setChapter($this);
         }
 
         return $this;
@@ -248,8 +218,8 @@ class Story
     {
         if ($this->favorites->removeElement($favorite)) {
             // set the owning side to null (unless already changed)
-            if ($favorite->getStory() === $this) {
-                $favorite->setStory(null);
+            if ($favorite->getChapter() === $this) {
+                $favorite->setChapter(null);
             }
         }
 
