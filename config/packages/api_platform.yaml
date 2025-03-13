@@ -1,0 +1,12 @@
+api_platform:
+    title: 'API WeTale'
+    description: 'API de WeTale'
+    version: '1.0.0'
+    enable_swagger: true
+    enable_swagger_ui: true
+    enable_re_doc: true
+    enable_entrypoint: true
+    enable_docs: true
+    formats:
+        jsonld: [ 'application/ld+json' ]
+        json: [ 'application/json' ]
