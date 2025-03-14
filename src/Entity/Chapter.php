@@ -2,60 +2,90 @@
 
 namespace App\Entity;
 
+use AllowDynamicProperties;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Delete;
 use App\Repository\ChapterRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
-#[ORM\Entity(repositoryClass: ChapterRepository::class)]
+#[AllowDynamicProperties] #[ORM\Entity(repositoryClass: ChapterRepository::class)]
+#[ApiResource(
+    operations: [
+        new Get(security: "is_granted('ROLE_USER')"),
+        new Post(security: "is_granted('ROLE_ADMIN')"),
+        new Put(security: "is_granted('ROLE_ADMIN')"),
+        new Delete(security: "is_granted('ROLE_ADMIN')")
+    ],
+    normalizationContext: ['groups' => ['story:read']],
+    denormalizationContext: ['groups' => ['story:write']]
+)]
 class Chapter
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['story:read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'chapters')]
+    #[Groups(['story:read', 'story:write'])]
     private ?Story $story = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['story:read', 'story:write'])]
     private ?string $content = null;
 
     #[ORM\Column]
+    #[Groups(['story:read', 'story:write'])]
     private ?int $number = null;
 
     #[ORM\Column]
+    #[Groups(['story:read', 'story:write'])]
     private ?bool $isCurrent = null;
 
     #[ORM\Column]
+    #[Groups(['story:read', 'story:write'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column]
+    #[Groups(['story:read', 'story:write'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
     /**
      * @var Collection<int, Vote>
      */
-    #[ORM\OneToMany(targetEntity: Vote::class, mappedBy: 'chapter')]
+    #[ORM\OneToMany(targetEntity: Vote::class, mappedBy: 'chapter', cascade: ['persist', 'remove'])]
     private Collection $votes;
 
-    /**
-     * @var Collection<int, Library>
-     */
-    #[ORM\OneToMany(targetEntity: Library::class, mappedBy: 'chapter')]
-    private Collection $libraries;
+    #[ORM\PrePersist]
+    public function prePersist(): void
+    {
+        $now = new \DateTimeImmutable();
+        if ($this->createdAt === null) {
+            $this->createdAt = $now;
+        }
+        $this->updatedAt = $now;
+    }
 
-    /**
-     * @var Collection<int, Favorite>
-     */
-    #[ORM\OneToMany(targetEntity: Favorite::class, mappedBy: 'chapter')]
-    private Collection $favorites;
+    #[ORM\PreUpdate]
+    public function preUpdate(): void
+    {
+        if ($this->createdAt === null) {
+            $this->createdAt = new \DateTimeImmutable();
+        }
+        $this->updatedAt = new \DateTimeImmutable();
+    }
 
     public function __construct()
     {
         $this->votes = new ArrayCollection();
-        $this->libraries = new ArrayCollection();
         $this->favorites = new ArrayCollection();
     }
 
@@ -72,7 +102,6 @@ class Chapter
     public function setStory(?Story $story): static
     {
         $this->story = $story;
-
         return $this;
     }
 
@@ -84,7 +113,6 @@ class Chapter
     public function setContent(string $content): static
     {
         $this->content = $content;
-
         return $this;
     }
 
@@ -96,7 +124,6 @@ class Chapter
     public function setNumber(int $number): static
     {
         $this->number = $number;
-
         return $this;
     }
 
@@ -108,7 +135,6 @@ class Chapter
     public function setIsCurrent(bool $isCurrent): static
     {
         $this->isCurrent = $isCurrent;
-
         return $this;
     }
 
@@ -117,23 +143,9 @@ class Chapter
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
     public function getUpdatedAt(): ?\DateTimeImmutable
     {
         return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
     }
 
     /**
@@ -157,69 +169,8 @@ class Chapter
     public function removeVote(Vote $vote): static
     {
         if ($this->votes->removeElement($vote)) {
-            // set the owning side to null (unless already changed)
             if ($vote->getChapter() === $this) {
                 $vote->setChapter(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Library>
-     */
-    public function getLibraries(): Collection
-    {
-        return $this->libraries;
-    }
-
-    public function addLibrary(Library $library): static
-    {
-        if (!$this->libraries->contains($library)) {
-            $this->libraries->add($library);
-            $library->setChapter($this);
-        }
-
-        return $this;
-    }
-
-    public function removeLibrary(Library $library): static
-    {
-        if ($this->libraries->removeElement($library)) {
-            // set the owning side to null (unless already changed)
-            if ($library->getChapter() === $this) {
-                $library->setChapter(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Favorite>
-     */
-    public function getFavorites(): Collection
-    {
-        return $this->favorites;
-    }
-
-    public function addFavorite(Favorite $favorite): static
-    {
-        if (!$this->favorites->contains($favorite)) {
-            $this->favorites->add($favorite);
-            $favorite->setChapter($this);
-        }
-
-        return $this;
-    }
-
-    public function removeFavorite(Favorite $favorite): static
-    {
-        if ($this->favorites->removeElement($favorite)) {
-            // set the owning side to null (unless already changed)
-            if ($favorite->getChapter() === $this) {
-                $favorite->setChapter(null);
             }
         }
 

@@ -36,7 +36,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read'])]
     #[ORM\Column(type: Types::JSON)]
     private array $roles = [];
-
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -44,22 +43,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTimeImmutable $updatedAt = null;
 
     /**
-     * @var Collection<int, Vote>
+     * @var Library
      */
-    #[ORM\OneToMany(targetEntity: Vote::class, mappedBy: 'user')]
-    private Collection $votes;
-
-    /**
-     * @var Collection<int, Subscription>
-     */
-    #[ORM\OneToMany(targetEntity: Subscription::class, mappedBy: 'user')]
-    private Collection $subscriptions;
-
-    /**
-     * @var Collection<int, Library>
-     */
-    #[ORM\OneToMany(targetEntity: Library::class, mappedBy: 'user')]
-    private Collection $libraries;
+    #[ORM\OneToOne(targetEntity: Library::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private ?Library $library = null;
 
     /**
      * @var Collection<int, Favorite>
@@ -67,12 +54,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Favorite::class, mappedBy: 'user')]
     private Collection $favorites;
 
+    /**
+     * @var Collection<int, Subscription>
+     */
+    #[ORM\OneToMany(targetEntity: Subscription::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $subscriptions;
+
+    /**
+     * @var Collection<int, Vote>
+     */
+    #[ORM\OneToMany(targetEntity: Vote::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $votes;
+
+
     public function __construct()
     {
-        $this->votes = new ArrayCollection();
-        $this->subscriptions = new ArrayCollection();
-        $this->libraries = new ArrayCollection();
         $this->favorites = new ArrayCollection();
+        $this->subscriptions = new ArrayCollection();
+        $this->votes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -149,90 +148,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @return Collection<int, Vote>
+     * @return Library|null
      */
-    public function getVotes(): Collection
+    public function getLibrary(): ?Library
     {
-        return $this->votes;
+        return $this->library;
     }
 
-    public function addVote(Vote $vote): static
+    public function setLibrary(?Library $library): static
     {
-        if (!$this->votes->contains($vote)) {
-            $this->votes->add($vote);
-            $vote->setUser($this);
-        }
+        $this->library = $library;
 
-        return $this;
-    }
-
-    public function removeVote(Vote $vote): static
-    {
-        if ($this->votes->removeElement($vote)) {
-            // set the owning side to null (unless already changed)
-            if ($vote->getUser() === $this) {
-                $vote->setUser(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Subscription>
-     */
-    public function getSubscriptions(): Collection
-    {
-        return $this->subscriptions;
-    }
-
-    public function addSubscription(Subscription $subscription): static
-    {
-        if (!$this->subscriptions->contains($subscription)) {
-            $this->subscriptions->add($subscription);
-            $subscription->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeSubscription(Subscription $subscription): static
-    {
-        if ($this->subscriptions->removeElement($subscription)) {
-            // set the owning side to null (unless already changed)
-            if ($subscription->getUser() === $this) {
-                $subscription->setUser(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Library>
-     */
-    public function getLibraries(): Collection
-    {
-        return $this->libraries;
-    }
-
-    public function addLibrary(Library $library): static
-    {
-        if (!$this->libraries->contains($library)) {
-            $this->libraries->add($library);
+        if ($library && $library->getUser() !== $this) {
             $library->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeLibrary(Library $library): static
-    {
-        if ($this->libraries->removeElement($library)) {
-            // set the owning side to null (unless already changed)
-            if ($library->getUser() === $this) {
-                $library->setUser(null);
-            }
         }
 
         return $this;
@@ -259,12 +187,61 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeFavorite(Favorite $favorite): static
     {
         if ($this->favorites->removeElement($favorite)) {
-            // set the owning side to null (unless already changed)
             if ($favorite->getUser() === $this) {
                 $favorite->setUser(null);
             }
         }
 
+        return $this;
+    }
+
+    // Méthodes d'ajout et suppression de Subscription
+    public function getSubscriptions(): Collection
+    {
+        return $this->subscriptions;
+    }
+
+    public function addSubscription(Subscription $subscription): static
+    {
+        if (!$this->subscriptions->contains($subscription)) {
+            $this->subscriptions->add($subscription);
+            $subscription->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeSubscription(Subscription $subscription): static
+    {
+        if ($this->subscriptions->removeElement($subscription)) {
+            if ($subscription->getUser() === $this) {
+                $subscription->setUser(null);
+            }
+        }
+        return $this;
+    }
+
+// Méthodes d'ajout et suppression de Vote
+    public function getVotes(): Collection
+    {
+        return $this->votes;
+    }
+
+    public function addVote(Vote $vote): static
+    {
+        if (!$this->votes->contains($vote)) {
+            $this->votes->add($vote);
+            $vote->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeVote(Vote $vote): static
+    {
+        if ($this->votes->removeElement($vote)) {
+            if ($vote->getUser() === $this) {
+                $vote->setUser(null);
+            }
+        }
         return $this;
     }
 }

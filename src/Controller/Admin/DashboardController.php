@@ -2,6 +2,8 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\Chapter;
+use App\Entity\SubscriptionType;
 use App\Entity\User;
 
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;

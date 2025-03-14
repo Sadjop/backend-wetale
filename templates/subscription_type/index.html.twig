@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}SubscriptionType index{% endblock %}
+
+{% block body %}
+    <h1>SubscriptionType index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Duration</th>
+                <th>Price</th>
+                <th>CreatedAt</th>
+                <th>UpdatedAt</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for subscription_type in subscription_types %}
+            <tr>
+                <td>{{ subscription_type.id }}</td>
+                <td>{{ subscription_type.name }}</td>
+                <td>{{ subscription_type.duration }}</td>
+                <td>{{ subscription_type.price }}</td>
+                <td>{{ subscription_type.createdAt ? subscription_type.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ subscription_type.updatedAt ? subscription_type.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>
+                    <a href="{{ path('app_subscription_type_show', {'id': subscription_type.id}) }}">show</a>
+                    <a href="{{ path('app_subscription_type_edit', {'id': subscription_type.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_subscription_type_new') }}">Create new</a>
+{% endblock %}

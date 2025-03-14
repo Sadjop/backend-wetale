@@ -2,10 +2,26 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Delete;
 use App\Repository\FavoriteRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: FavoriteRepository::class)]
+#[ORM\Table(name: 'favorite', uniqueConstraints: [
+    new ORM\UniqueConstraint(name: 'user_story_unique', columns: ['user_id', 'story_id'])
+])]
+#[ApiResource(
+    operations: [
+        new Get(security: "is_granted('ROLE_USER') and object.getUser() == user"),
+        new Post(security: "is_granted('ROLE_USER')"),
+        new Put(security: "is_granted('ROLE_USER') and object.getUser() == user"),
+        new Delete(security: "is_granted('ROLE_USER') and object.getUser() == user")
+    ]
+)]
 class Favorite
 {
     #[ORM\Id]
@@ -13,14 +29,13 @@ class Favorite
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'favorites')]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'favorites')]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?User $user = null;
 
-    #[ORM\ManyToOne(inversedBy: 'favorites')]
+    #[ORM\ManyToOne(targetEntity: Story::class, inversedBy: 'favorites')]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Story $story = null;
-
-    #[ORM\ManyToOne(inversedBy: 'favorites')]
-    private ?Chapter $chapter = null;
 
     public function getId(): ?int
     {
@@ -35,7 +50,6 @@ class Favorite
     public function setUser(?User $user): static
     {
         $this->user = $user;
-
         return $this;
     }
 
@@ -47,19 +61,6 @@ class Favorite
     public function setStory(?Story $story): static
     {
         $this->story = $story;
-
-        return $this;
-    }
-
-    public function getChapter(): ?Chapter
-    {
-        return $this->chapter;
-    }
-
-    public function setChapter(?Chapter $chapter): static
-    {
-        $this->chapter = $chapter;
-
         return $this;
     }
 }
