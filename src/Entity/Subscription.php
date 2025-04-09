@@ -12,6 +12,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: SubscriptionRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 #[ApiResource(
     operations: [
         new Get(security: "is_granted('ROLE_USER')"),
@@ -48,6 +49,42 @@ class Subscription
     #[ORM\Column]
     private ?\DateTimeImmutable $updatedAt = null;
 
+    #[ORM\PrePersist]
+    public function setDefaultValues(): void
+    {
+        $now = new \DateTimeImmutable();
+
+        if (!$this->startDate) {
+            $this->startDate = $now;
+        }
+
+        if (!$this->endDate && $this->subscriptionType) {
+            $duration = $this->subscriptionType->getDuration();
+            $this->endDate = $this->startDate->modify("+{$duration} months");
+        }
+
+        if (!$this->createdAt) {
+            $this->createdAt = $now;
+        }
+        $this->updatedAt = $now;
+    }
+
+    #[ORM\PreUpdate]
+    public function setUpdatedAtValue(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function __toString(): string
+    {
+        return sprintf(
+            '%s (%s - %s)',
+            $this->subscriptionType ? $this->subscriptionType->getName() : 'Aucun type',
+            $this->startDate ? $this->startDate->format('Y-m-d') : '??',
+            $this->endDate ? $this->endDate->format('Y-m-d') : '??'
+        );
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -72,6 +109,11 @@ class Subscription
     public function setSubscriptionType(?SubscriptionType $subscriptionType): static
     {
         $this->subscriptionType = $subscriptionType;
+
+        if ($this->startDate && $subscriptionType) {
+            $this->endDate = $this->startDate->modify("+" . $subscriptionType->getDuration() . " months");
+        }
+
         return $this;
     }
 
@@ -80,9 +122,18 @@ class Subscription
         return $this->startDate;
     }
 
-    public function setStartDate(\DateTimeImmutable $startDate): static
+    /**
+     * @throws \DateMalformedStringException
+     */
+    public function setStartDate(?\DateTimeImmutable $startDate = null): static
     {
-        $this->startDate = $startDate;
+        $this->startDate = $startDate ?? new \DateTimeImmutable();
+
+        if ($this->subscriptionType) {
+            $duration = $this->subscriptionType->getDuration();
+            $this->endDate = $this->startDate->modify("+{$duration} months");
+        }
+
         return $this;
     }
 

@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Chapter;
+use App\Entity\Subscription;
 use App\Entity\SubscriptionType;
 use App\Entity\User;
 
@@ -52,6 +53,7 @@ class DashboardController extends AbstractDashboardController
     {
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
         yield MenuItem::linkToCrud('Users', 'fas fa-users', User::class);
+        yield MenuItem::linkToCrud('Types Abonnement', 'fas fa-book', SubscriptionType::class);
         // yield MenuItem::linkToCrud('The Label', 'fas fa-list', EntityClass::class);
     }
 }
