@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New SubscriptionType{% endblock %}
+
+{% block body %}
+    <h1>Create new SubscriptionType</h1>
+
+    {{ include('subscription_type/_form.html.twig') }}
+
+    <a href="{{ path('app_subscription_type_index') }}">back to list</a>
+{% endblock %}
